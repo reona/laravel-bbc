@@ -284,7 +284,7 @@ php artisan route:list
 
 下図のように表示されているかと思います
 
-![route-list](./readmie_image/route-list.png)
+![route-list](https://github.com/reona/laravel-bbc/blob/master/readme_image/route-list.png?raw=true)
 
 これはURLと実際に動作する処理されるコントローラーが `route.php` ファイルが紐付けれらていることを表しています
 
