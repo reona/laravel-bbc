@@ -282,6 +282,182 @@ Route::resource('bbc', 'PostsController');
 php artisan route:list
 ```
 
+下図のように表示されているかと思います
+
+![route-list](./readmie_image/route-list.png)
+
+これはURLと実際に動作する処理されるコントローラーが `route.php` ファイルが紐付けれらていることを表しています
+
+> 例 : GET メソッドで `/bbc` にアクセスすると、`PostsController` の `index` メソッドが実行されます
+
+## Step6.1 投稿一覧ページを作成する
+
+投稿が一覧で表示されるページを作成します
+
+- 編集するファイル : `app/controller/PostsController.php`
+
+`/bbc` にアクセスすると、`PostsController` の `index` メソッドが実行され、投稿一覧ページが表示されるようにします
+
+```
+class PostsController extends Controller
+{
+    # ここから
+    /**
+    * 投稿一覧ページを表示するメソッド (* が付いているところはphpdocなので書かなくてもいいです)
+    *
+    * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+    */
+    public function index()
+    {
+        // Postテーブルから全件取得
+        // 例 : SELECt * FROM Post;
+        $posts = Post:all(); 
+ 
+        // 取得した $posts を bbc フォルダのなかに作成する index.blade.php ファイルに渡してあげる
+        return view('bbc.index', [
+            'posts' => $posts,
+        ]);
+    }
+    # ここまで
+}
+```
+
+次にビューのレイアウトを作成します
+
+まずは、どのビューファイルでも使用するレイアウトファイルを作成します
+
+1. 新しく `resources/views/` フォルダに `layouts` フォルダを作成してください
+2. その後、`layouts` フォルダに `default.blade.php` ファイルを作成してください
+
+2まで完了したら、参考ページの内容をそのまま `default.blade.php` ファイルにコピペします
+
+```
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+	<meta charset="utf-8" />
+ 
+	<!-- bootstrap -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap-theme.min.css">
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+ 
+	<title>Laravelの掲示板</title>
+</head>
+<body>
+ 
+@yield('content')
+ 
+</body>
+</html>
+```
+
+次に投稿一覧ページを表示するビューファイルを作成します
+
+1. `resources/views/` フォルダに `bbc` フォルダを作成してください
+2. `bbc` フォルダの中に、`index.blade.php` ファイルを作成してください
+
+2まで完了したら、参考ページの内容をそのまま `index.blade.php` ファイルにコピペします
+
+```
+@extends('layouts.default')
+@section('content')
+ 
+<div class="col-xs-8 col-xs-offset-2">
+ 
+@foreach($posts as $post)
+ 
+	<h2>タイトル：{{ $post->title }}
+		<small>投稿日：{{ date("Y年 m月 d日",strtotime($post->created_at)) }}</small>
+	</h2>
+	<p>カテゴリー：{{ $post->category->name }}</p>
+	<p>{{ $post->content }}</p>
+	<p>{{ link_to("/bbc/{$post->id}", '続きを読む', array('class' => 'btn btn-primary')) }}</p>
+	<p>コメント数：{{ $post->comment_count }}</p>
+	<hr />
+@endforeach
+ 
+</div>
+ 
+@endsection # 注意!! @stop から @endsection に変わってる
+```
+
+**注意!! : 最後の @stop が @endsection に変わっていることに注意してください**
+
+## Step6.2 続きを読むボタンを作っていく
+
+今回の掲示板では、投稿の詳細内容を表示したいときに、「続きを読む」ボタンを押すことになっていります
+
+現状では、投稿一覧しか表示されませんので、「続きを読む」ボタンを作っていきましょう
+
+- 編集するファイル : `app/controller/PostsController.php`
+
+`bbc/1` にアクセスすると（1の部分は、投稿ID）`PostsController` の `show` メソッドが実行され投稿の詳細情報が表示されるようにする
+
+```
+class PostsController extends Controller
+{
+    public function index()
+    {
+        # 省略
+    }
+   
+    /**
+    * 記事の詳細情報を表示するメソッド
+    *
+    * @param $id
+    * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+    */
+    public function show($id)
+    {
+        # 投稿IDから該当の投稿情報を取得
+        # 例 : SELECT * FROM Posts WHERE id = $id
+        $post = Post::find($id);
+       
+        # 取得した $post を bbc フォルダにある single.blade.php ファイルに渡してあげる
+        return view('bbc.single', [
+            'post' => $post,
+        ])
+    }
+}
+```
+
+つぎにビューファイルを作成します
+
+1. 新しく `resources/view/bbc` フォルダに `single.blade.php` ファイルを作成してください
+
+1 が完了したら、参考ページの内容をそのまま、`single.blade.php` ファイルにコピペします
+
+```
+@extends('layouts.default')
+@section('content')
+ 
+<div class="col-xs-8 col-xs-offset-2">
+ 
+<h2>タイトル：{{ $post->title }}
+	<small>投稿日：{{ date("Y年 m月 d日",strtotime($post->created_at)) }}</small>
+</h2>
+<p>カテゴリー：{{ $post->category->name }}</p>
+<p>{{ $post->content }}</p>
+ 
+<hr />
+ 
+<h3>コメント一覧</h3>
+@foreach($post->comments as $single_comment)
+	<h4>{{ $single_comment->commenter }}</h4>
+	<p>{{ $single_comment->comment }}</p><br />
+@endforeach
+ 
+</div>
+ 
+@endsection # 注意!! @stop から @endsection に変わってる
+```
+
+**注意!! : 最後の @stop が @endsection に変わっていることに注意してください**
+
+これで「続きを読む」ボタンが作成できました
+
 
 ## Security Vulnerabilities
 
